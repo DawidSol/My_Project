@@ -2,10 +2,12 @@ from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views.generic import FormView
 from Shopping_list_app.forms import ProductForm
+from Shopping_list_app.models import Product
 
 
 def index(request):
-    return render(request, 'base.html')
+    products = Product.objects.all()
+    return render(request, 'base.html', {'products': products})
 
 
 class AddProductView(FormView):
