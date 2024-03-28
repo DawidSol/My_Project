@@ -1,0 +1,14 @@
+{%  extends 'base.html' %}
+{% block title %}List details{% endblock %}
+{% block content %}
+    <ul><h1>Lista z dnia {{ shopping_list }}:</h1>
+    {% if shopping_list.list_checked is True %}
+        <h2>Lista została zrealizowana</h2>
+    {% else %}
+        <h2>Lista w trakcie realizacji</h2>
+    {% endif %}
+    {% for product in products %}
+        <li>{{ product }} {{ product.quantity }}x</li>
+    {% endfor %}
+    </ul>
+{%  endblock %}
