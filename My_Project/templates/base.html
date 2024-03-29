@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,6 +11,10 @@
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
 </head>
 <style>
+    .right-button {
+        float: right;
+        margin-left: 10px; 
+    }
   .footer {
     position: absolute;
     bottom: 0;
@@ -32,21 +37,34 @@
         <a class="nav-item nav-link active" href="/add_product/">Dodaj Produkt</a>
     </div>
   </div>
+    {% if user.is_authenticated %}
+            <a class="nav-item nav-link active right-button" href="/logout/">Wyloguj</a>
+            {% else %}
+            <a class="nav-item nav-link active right-button" href="/login/">Zaloguj</a>
+        {% endif %}
+    <a class="nav-item nav-link active right-button" href="/create_user/">Rejestracja</a>
 </nav>
+{% block list %}
+    <h1>Lista zakupów</h1>
+{% endblock %}
 {% block content %}
-    <ul><h3>Lista zakupów:</h3>
+    <form method="post" action="{% url 'delete_product' %}">
+    {% csrf_token %}
+    <ul>
     {% for product in products %}
         <li><strong>{{ product }}</strong> {{ product.quantity }}x
-        <input type="checkbox" name="checked"></li>
+        <input type="checkbox" name="selected_products" value="{{ product.id }}"></li>
     {% endfor %}
     </ul>
-    <a href="/delete_product/">Usuń zaznaczone</a>
-    <a href="">Rozlicz listę</a>
+    <input type="hidden" name="next" value="{{ request.path }}">
+    <button type="submit">Usuń zaznaczone</button>
+    </form>
 {% endblock %}
 <footer class="footer">
       <div class="container">
         <span class="text-muted">Created by Dawid Sołek</span>
       </div>
     </footer>
+<script src="{% static 'scripts.js' %}"></script>
 </body>
 </html>

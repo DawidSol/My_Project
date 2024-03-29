@@ -1,4 +1,7 @@
 from django import forms
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import User
+
 from .models import ShoppingList
 
 
@@ -12,3 +15,16 @@ class ProductForm(forms.Form):
     quantity = forms.IntegerField(validators=[validate_quantity])
     shopping_list = forms.ModelChoiceField(queryset=ShoppingList.objects.filter(list_checked=False),
                                            widget=forms.RadioSelect)
+
+
+class MyCreationForm(UserCreationForm):
+    email = forms.EmailField(required=True)
+
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'password1', 'password2']
+
+
+class LoginForm(forms.Form):
+    username = forms.CharField(max_length=64)
+    password = forms.CharField(max_length=64, widget=forms.PasswordInput)

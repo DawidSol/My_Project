@@ -1,7 +1,9 @@
 {%  extends 'base.html' %}
 {% block title %}Your shopping lists{% endblock %}
+{% block list %}
+    <h1>Listy zakupów</h1>
+{% endblock %}
 {% block content %}
-<h1>Listy:</h1>
 <ul>
     {% for shopping_list in lists %}
         <li><a href="{% url 'list_details' shopping_list.id %}">{{ shopping_list }}</a></li>
