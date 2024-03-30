@@ -11,14 +11,23 @@ from shopping_list_app.models import ShoppingList, Product
 
 
 def index(request):
-    shopping_list = ShoppingList.objects.last()
-    products = Product.objects.filter(shopping_list=shopping_list)
+    if request.user.is_authenticated:
+        shopping_list = ShoppingList.objects.filter(list_checked=False, user=request.user).last()
+        products = Product.objects.filter(shopping_list=shopping_list)
+    else:
+        if 'shopping_list_id' not in request.session:
+            shopping_list = ShoppingList.objects.create(add_date=datetime.now())
+            request.session['shopping_list_id'] = shopping_list.id
+        else:
+            shopping_list_id = request.session.get('shopping_list_id')
+            shopping_list = ShoppingList.objects.get(id=shopping_list_id)
+        products = Product.objects.filter(shopping_list=shopping_list)
     return render(request, 'base.html', {'products': products})
 
 
 class CreateListView(LoginRequiredMixin, View):
     def get(self, request):
-        ShoppingList.objects.create(add_date=datetime.now())
+        ShoppingList.objects.create(add_date=datetime.now(), user=self.request.user)
         return redirect('index')
 
 
@@ -28,15 +37,20 @@ class AddProductView(FormView):
     success_url = reverse_lazy('index')
 
     def form_valid(self, form):
-        name = form.cleaned_data['name']
-        quantity = form.cleaned_data['quantity']
         shopping_list = form.cleaned_data['shopping_list']
-        Product.objects.create(name=name, quantity=quantity, shopping_list=shopping_list)
-        latest_list = ShoppingList.objects.all().order_by('-add_date')[0]
-        if shopping_list == latest_list:
-            return redirect('index')
+        product = form.save(commit=False)
+        product.shopping_list = shopping_list
+        product.save()
+        return super().form_valid(form)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        if self.request.user.is_authenticated:
+            kwargs['user'] = self.request.user
         else:
-            return redirect('list_details', shopping_list.id)
+            shopping_list_id = self.request.session.get('shopping_list_id')
+            kwargs['initial'] = {'shopping_list': shopping_list_id}
+        return kwargs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -49,6 +63,10 @@ class ListsView(LoginRequiredMixin, ListView):
     model = ShoppingList
     template_name = 'lists.html'
     context_object_name = 'lists'
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        return queryset.filter(user=self.request.user)
 
 
 class ListDetailView(LoginRequiredMixin, View):
