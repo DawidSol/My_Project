@@ -24,7 +24,8 @@ from shopping_list_app.views import (index,
                                      DeleteProductView,
                                      CreateUserView,
                                      LoginView,
-                                     LogoutView)
+                                     LogoutView,
+                                     AddLocationView)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -36,5 +37,6 @@ urlpatterns = [
     path('delete_product/', DeleteProductView.as_view(), name='delete_product'),
     path('create_user/', CreateUserView.as_view(), name='create_user'),
     path('login/', LoginView.as_view(), name='login'),
-    path('logout/', LogoutView.as_view(), name='logout')
+    path('logout/', LogoutView.as_view(), name='logout'),
+    path('add_location/', AddLocationView.as_view(), name='add_location')
 ]

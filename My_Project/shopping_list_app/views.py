@@ -6,8 +6,8 @@ from django.urls import reverse_lazy
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import FormView, ListView, RedirectView
-from shopping_list_app.forms import ProductForm, MyCreationForm, LoginForm
-from shopping_list_app.models import ShoppingList, Product
+from .forms import ProductForm, MyCreationForm, LoginForm
+from .models import ShoppingList, Product, Location
 
 
 def index(request):
@@ -28,7 +28,7 @@ def index(request):
 class CreateListView(LoginRequiredMixin, View):
     def get(self, request):
         ShoppingList.objects.create(add_date=datetime.now(), user=self.request.user)
-        return redirect('index')
+        return render(request, 'base.html')
 
 
 class AddProductView(FormView):
@@ -138,3 +138,17 @@ class LogoutView(RedirectView):
     def get(self, request, *args, **kwargs):
         logout(request)
         return super().get(request, *args, **kwargs)
+
+
+class AddLocationView(LoginRequiredMixin, View):
+    def get(self, request):
+        return render(request, 'location.html')
+
+    def post(self, request):
+        name = request.POST.get('name')
+        latitude = request.POST.get('latitude')
+        longitude = request.POST.get('longitude')
+
+        Location.objects.create(name=name, point='POINT({} {})'.format(latitude, longitude))
+
+        return redirect('index')
