@@ -40,5 +40,5 @@ urlpatterns = [
     path('login/', LoginView.as_view(), name='login'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('add_location/', AddLocationView.as_view(), name='add_location'),
-    path('leave_location/', LeaveLocationView.as_view(), name='leave_location')
+    path('leave_location/', LeaveLocationView.as_view(), name='leave_location'),
 ]

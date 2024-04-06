@@ -28,8 +28,15 @@ def index(request):
 
 class CreateListView(LoginRequiredMixin, View):
     def get(self, request):
-        ShoppingList.objects.create(add_date=datetime.now(), user=self.request.user)
-        return render(request, 'base.html')
+        title = 'Stwórz listę'
+        button = 'Zatwierdź'
+        return render(request, 'create_list.html', {'title': title, 'button': button})
+
+    def post(self, request):
+        answer = request.POST.get('answer')
+        if answer == "True":
+            ShoppingList.objects.create(add_date=datetime.now(), user=self.request.user)
+        return redirect('index')
 
 
 class AddProductView(FormView):

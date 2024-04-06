@@ -10,7 +10,6 @@ mymap.on('click', function(e) {
     document.getElementById('latitude').value = latitude;
     document.getElementById('longitude').value = longitude;
 });
-
 if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(function(position) {
         const latitude = position.coords.latitude;
@@ -24,7 +23,10 @@ $.ajax({
     type: "POST",
     url: "/leave_location/",
     data: data,
-    error: function(xhr, errmsg, err) {
+    headers: {
+        "X-CSRFToken": "{{ csrf_token }}"
+    },
+    error: function(xhr) {
         console.error("Wystąpił błąd podczas przesyłania danych lokalizacyjnych: " + xhr.status + ": " + xhr.responseText);
     }
 });

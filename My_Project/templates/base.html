@@ -10,6 +10,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 </head>
 <style>
     .right-button {
@@ -63,17 +64,19 @@
     <input type="hidden" name="next" value="{{ request.path }}">
     <button type="submit">Usuń zaznaczone</button>
     </form>
+    {% if user.is_authenticated %}
     <form method="post" action="{% url 'leave_location' %}">
     {% csrf_token %}
     <input type="hidden" name="shopping_list_id" value="{{ shopping_list_id }}">
     <button type="submit">Zamknij listę</button>
 </form>
+    {% endif %}
 {% endblock %}
 <footer class="footer">
       <div class="container">
         <span class="text-muted">Created by Dawid Sołek</span>
       </div>
     </footer>
-<script src="{% static 'scripts.js' %}"></script>
+    <script src="{% static 'scripts.js' %}"></script>
 </body>
 </html>
