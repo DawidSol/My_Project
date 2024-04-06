@@ -18,13 +18,20 @@ if (navigator.geolocation) {
     latitude: latitude,
     longitude: longitude
 };
-
+const csrfToken = document.querySelector('#csrf_token').value;
 $.ajax({
     type: "POST",
     url: "/leave_location/",
     data: data,
     headers: {
-        "X-CSRFToken": "{{ csrf_token }}"
+        "X-CSRFToken": csrfToken
+    },
+    success: function(response) {
+        if (response.status === 'success') {
+            console.log(response.message);
+        } else {
+            console.error(response.message);
+        }
     },
     error: function(xhr) {
         console.error("Wystąpił błąd podczas przesyłania danych lokalizacyjnych: " + xhr.status + ": " + xhr.responseText);

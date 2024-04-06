@@ -181,9 +181,9 @@ class LeaveLocationView(LoginRequiredMixin, View):
                 shopping_list.checked_date = datetime.now()
                 shopping_list.save()
                 info = 'Lista pomyślnie zamknięta!'
-                return render(request, 'base.html', {'info': info})
+                return JsonResponse({'status': 'success', 'message': info})
             else:
                 info = 'Nie opuszczono okolic sklepu!'
-                return render(request, 'base.html', {'info': info})
+                return JsonResponse({'status': 'error', 'message': info})
         else:
             return JsonResponse({'status': 'error', 'message': 'Brak danych lokalizacyjnych.'})

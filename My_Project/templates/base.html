@@ -67,6 +67,7 @@
     {% if user.is_authenticated %}
     <form method="post" action="{% url 'leave_location' %}">
     {% csrf_token %}
+        <input type="hidden" id="csrf_token" value="{{ csrf_token }}">
     <input type="hidden" name="shopping_list_id" value="{{ shopping_list_id }}">
     <button type="submit">Zamknij listę</button>
 </form>
