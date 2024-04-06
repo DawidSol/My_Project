@@ -11,13 +11,21 @@
             height: 100%;
         }
 {% endblock %}
+{% block list %}<h2>Lokalizacja sklepu</h2>{% endblock %}
 {% block content %}
     <form method="post">
     {% csrf_token %}
     <label>Nazwa lokalizacji:</label>
     <input type="text" name="name"><br>
-    <input type="hidden" id="latitude" name="latitude">
-    <input type="hidden" id="longitude" name="longitude">
+    <label>Współrzędne:</label>
+    <input id="latitude" name="latitude">
+    <input id="longitude" name="longitude"><br>
+    <label>Wybierz listę zakupów:</label><br>
+    <select name="shopping_list">
+        {% for shopping_list in shopping_lists %}
+            <option value="{{ shopping_list.id }}">{{ shopping_list }}</option><br>
+        {% endfor %}
+    </select>
     <button type="submit">Dodaj</button>
 </form>
 <div id="map-container" style="width: 600px; height: 400px; overflow: hidden;">

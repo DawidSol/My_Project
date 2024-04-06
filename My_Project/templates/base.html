@@ -48,6 +48,7 @@
         {% endif %}
 </nav>
 {% block list %}
+    {{ info }}
     <h1>Lista zakupów</h1>
 {% endblock %}
 {% block content %}
@@ -62,6 +63,11 @@
     <input type="hidden" name="next" value="{{ request.path }}">
     <button type="submit">Usuń zaznaczone</button>
     </form>
+    <form method="post" action="{% url 'leave_location' %}">
+    {% csrf_token %}
+    <input type="hidden" name="shopping_list_id" value="{{ shopping_list_id }}">
+    <button type="submit">Zamknij listę</button>
+</form>
 {% endblock %}
 <footer class="footer">
       <div class="container">

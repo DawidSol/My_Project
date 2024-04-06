@@ -24,3 +24,4 @@ class Product(models.Model):
 class Location(models.Model):
     name = models.CharField(max_length=64)
     point = models.PointField()
+    shopping_list = models.ForeignKey(ShoppingList, on_delete=models.CASCADE, blank=True, null=True)
