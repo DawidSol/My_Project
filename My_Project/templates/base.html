@@ -49,7 +49,7 @@
         {% endif %}
 </nav>
 {% block list %}
-    {{ info }}
+    <h3>{{ info }}</h3>
     <h1>Lista zakupów</h1>
 {% endblock %}
 {% block content %}
@@ -65,11 +65,42 @@
     <button type="submit">Usuń zaznaczone</button>
     </form>
     {% if user.is_authenticated %}
+        <button id="find-me">Aktualna lokalizacja</button>
+        <p id="status"></p>
+        <a id="map-link" target="_blank"></a>
+        <script>
+            function geoFindMe() {
+    const status = document.querySelector("#status");
+    const mapLink = document.querySelector("#map-link");
+    mapLink.href = "";
+    mapLink.textContent = "";
+    function success(position) {
+    const latitude = position.coords.latitude;
+    const longitude = position.coords.longitude;
+    document.getElementById("latitude").value = latitude;
+    document.getElementById("longitude").value = longitude;
+    status.textContent = "";
+    mapLink.href = `https://www.openstreetmap.org/#map=18/${latitude}/${longitude}`;
+    mapLink.textContent = `Latitude: ${latitude} °, Longitude: ${longitude} °`;
+}
+    function error() {
+    status.textContent = "Unable to retrieve your location";
+}
+    if (!navigator.geolocation) {
+    status.textContent = "Geolocation is not supported by your browser";
+} else {
+    status.textContent = "Locating…";
+    navigator.geolocation.getCurrentPosition(success, error);
+}
+}
+    document.querySelector("#find-me").addEventListener("click", geoFindMe);
+        </script>
     <form method="post" action="{% url 'leave_location' %}">
-    {% csrf_token %}
-        <input type="hidden" id="csrf_token" value="{{ csrf_token }}">
-    <input type="hidden" name="shopping_list_id" value="{{ shopping_list_id }}">
-    <button type="submit">Zamknij listę</button>
+        {% csrf_token %}
+        <input type="hidden" name="shopping_list_id" value="{{ shopping_list_id }}">
+        <input type="hidden" id="latitude" name="latitude" value="">
+        <input type="hidden" id="longitude" name="longitude" value="">
+        <button type="submit">Zamknij listę</button>
 </form>
     {% endif %}
 {% endblock %}
@@ -78,6 +109,6 @@
         <span class="text-muted">Created by Dawid Sołek</span>
       </div>
     </footer>
-    <script src="{% static 'scripts.js' %}"></script>
+<script src="{% static 'scripts.js' %}"></script>
 </body>
 </html>

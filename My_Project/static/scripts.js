@@ -4,40 +4,9 @@ const mymap = L.map('mapid').setView(defaultCoordinates, defaultZoomLevel);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 }).addTo(mymap);
-mymap.on('click', function(e) {
+mymap.on('click', function (e) {
     const latitude = e.latlng.lat;
     const longitude = e.latlng.lng;
     document.getElementById('latitude').value = latitude;
     document.getElementById('longitude').value = longitude;
 });
-if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(function(position) {
-        const latitude = position.coords.latitude;
-        const longitude = position.coords.longitude;
-        const data = {
-    latitude: latitude,
-    longitude: longitude
-};
-const csrfToken = document.querySelector('#csrf_token').value;
-$.ajax({
-    type: "POST",
-    url: "/leave_location/",
-    data: data,
-    headers: {
-        "X-CSRFToken": csrfToken
-    },
-    success: function(response) {
-        if (response.status === 'success') {
-            console.log(response.message);
-        } else {
-            console.error(response.message);
-        }
-    },
-    error: function(xhr) {
-        console.error("Wystąpił błąd podczas przesyłania danych lokalizacyjnych: " + xhr.status + ": " + xhr.responseText);
-    }
-});
-    });
-} else {
-    console.error("Geolokalizacja nie jest wspierana przez przeglądarkę.");
-}

@@ -1,5 +1,5 @@
 from django.contrib.auth import authenticate, login, logout
-from django.http import JsonResponse
+from django.contrib.gis.measure import Distance
 from django.views import View
 from datetime import datetime
 from django.shortcuts import render, redirect
@@ -15,6 +15,7 @@ def index(request):
     if request.user.is_authenticated:
         shopping_list = ShoppingList.objects.filter(list_checked=False, user=request.user).last()
         products = Product.objects.filter(shopping_list=shopping_list)
+        shopping_list_id = shopping_list.id
     else:
         if 'shopping_list_id' not in request.session:
             shopping_list = ShoppingList.objects.create(add_date=datetime.now())
@@ -23,7 +24,7 @@ def index(request):
             shopping_list_id = request.session.get('shopping_list_id')
             shopping_list = ShoppingList.objects.get(id=shopping_list_id)
         products = Product.objects.filter(shopping_list=shopping_list)
-    return render(request, 'base.html', {'products': products, 'shopping_list_id': shopping_list.id})
+    return render(request, 'base.html', {'products': products, 'shopping_list_id': shopping_list_id})
 
 
 class CreateListView(LoginRequiredMixin, View):
@@ -168,22 +169,25 @@ class AddLocationView(LoginRequiredMixin, View):
 class LeaveLocationView(LoginRequiredMixin, View):
 
     def post(self, request):
-        if 'latitude' in request.POST and 'longitude' in request.POST:
-            latitude = float(request.POST['latitude'])
-            longitude = float(request.POST['longitude'])
+        latitude = request.POST.get('latitude')
+        longitude = request.POST.get('longitude')
+        if latitude and longitude:
+            latitude = float(latitude)
+            longitude = float(longitude)
             my_current_location = Location.objects.create(name='current_location',
                                                           point='POINT({} {})'.format(latitude, longitude))
             shopping_list_id = request.POST.get('shopping_list_id')
             shopping_list = ShoppingList.objects.get(id=shopping_list_id)
             shop_location = Location.objects.get(shopping_list=shopping_list)
-            if shop_location.point.distance(my_current_location) > 50:
+            if shop_location.point.distance(my_current_location.point) > 50:
                 shopping_list.list_checked = True
                 shopping_list.checked_date = datetime.now()
                 shopping_list.save()
                 info = 'Lista pomyślnie zamknięta!'
-                return JsonResponse({'status': 'success', 'message': info})
+                return redirect('lists')
             else:
                 info = 'Nie opuszczono okolic sklepu!'
-                return JsonResponse({'status': 'error', 'message': info})
+                return redirect('add_product')
         else:
-            return JsonResponse({'status': 'error', 'message': 'Brak danych lokalizacyjnych.'})
+            info = 'Brak danych lokalizacyjnych'
+            return redirect('index')
