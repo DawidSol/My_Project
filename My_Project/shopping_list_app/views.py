@@ -1,5 +1,4 @@
 from django.contrib.auth import authenticate, login, logout
-from django.contrib.gis.measure import Distance
 from django.views import View
 from datetime import datetime
 from django.shortcuts import render, redirect
@@ -12,10 +11,11 @@ from .models import ShoppingList, Product, Location
 
 
 def index(request):
+    products = None
     if request.user.is_authenticated:
         shopping_list = ShoppingList.objects.filter(list_checked=False, user=request.user).last()
-        products = Product.objects.filter(shopping_list=shopping_list)
-        shopping_list_id = shopping_list.id
+        if shopping_list:
+            products = Product.objects.filter(shopping_list=shopping_list)
     else:
         if 'shopping_list_id' not in request.session:
             shopping_list = ShoppingList.objects.create(add_date=datetime.now())
@@ -23,8 +23,11 @@ def index(request):
         else:
             shopping_list_id = request.session.get('shopping_list_id')
             shopping_list = ShoppingList.objects.get(id=shopping_list_id)
-        products = Product.objects.filter(shopping_list=shopping_list)
-    return render(request, 'base.html', {'products': products, 'shopping_list_id': shopping_list_id})
+            products = Product.objects.filter(shopping_list=shopping_list)
+    info = 'Lista zakupów:'
+    return render(request, 'base.html', {'products': products,
+                                         'shopping_list': shopping_list,
+                                         'info': info})
 
 
 class CreateListView(LoginRequiredMixin, View):
@@ -82,6 +85,7 @@ class ListDetailView(LoginRequiredMixin, View):
     def get(self, request, shopping_list_id):
         shopping_list = ShoppingList.objects.get(pk=shopping_list_id)
         products = Product.objects.filter(shopping_list=shopping_list)
+        shopping_list_id = shopping_list.id
         return render(request, 'list_details.html',
                       {'shopping_list': shopping_list, 'products': products})
 
@@ -151,7 +155,7 @@ class LogoutView(RedirectView):
 
 class AddLocationView(LoginRequiredMixin, View):
     def get(self, request):
-        shopping_lists = ShoppingList.objects.filter(user=request.user)
+        shopping_lists = ShoppingList.objects.filter(list_checked=False, user=request.user)
         return render(request, 'location.html', {'shopping_lists': shopping_lists})
 
     def post(self, request):
@@ -179,15 +183,14 @@ class LeaveLocationView(LoginRequiredMixin, View):
             shopping_list_id = request.POST.get('shopping_list_id')
             shopping_list = ShoppingList.objects.get(id=shopping_list_id)
             shop_location = Location.objects.get(shopping_list=shopping_list)
-            if shop_location.point.distance(my_current_location.point) > 50:
+            if shop_location.point.distance(my_current_location.point) > 0.05:
                 shopping_list.list_checked = True
                 shopping_list.checked_date = datetime.now()
                 shopping_list.save()
                 info = 'Lista pomyślnie zamknięta!'
-                return redirect('lists')
             else:
                 info = 'Nie opuszczono okolic sklepu!'
-                return redirect('add_product')
         else:
             info = 'Brak danych lokalizacyjnych'
-            return redirect('index')
+        return render(request, 'base.html', {'info': info})
+

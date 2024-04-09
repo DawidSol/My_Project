@@ -1,12 +1,32 @@
-const defaultCoordinates = [52.2297, 21.0122];
-const defaultZoomLevel = 15;
-const mymap = L.map('mapid').setView(defaultCoordinates, defaultZoomLevel);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-}).addTo(mymap);
-mymap.on('click', function (e) {
-    const latitude = e.latlng.lat;
-    const longitude = e.latlng.lng;
-    document.getElementById('latitude').value = latitude;
-    document.getElementById('longitude').value = longitude;
-});
+function geoFindLocation(city, street) {
+            const status = document.querySelector("#status");
+            const mapLink = document.querySelector("#map-link");
+            mapLink.href = "";
+            mapLink.textContent = "";
+            const address = city + ", " + street;
+            const url = `https://nominatim.openstreetmap.org/search?q=${address}&format=json&limit=1`;
+
+            fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                if (data.length > 0) {
+                    const latitude = data[0].lat;
+                    const longitude = data[0].lon;
+                    document.getElementById("latitude").value = latitude;
+                    document.getElementById("longitude").value = longitude;
+                    status.textContent = "";
+                    mapLink.href = `https://www.openstreetmap.org/#map=18/${latitude}/${longitude}`;
+                    mapLink.textContent = `Latitude: ${latitude} °, Longitude: ${longitude} °`;
+                } else {
+                    status.textContent = "Nie znaleziono współrzędnych dla podanego adresu.";
+                }
+            })
+            .catch(error => {
+                status.textContent = "Wystąpił błąd podczas geokodowania adresu.";
+            });
+        }
+        document.querySelector("#geocode-button").addEventListener("click", function() {
+            const city = document.getElementById("city-input").value;
+            const street = document.getElementById("street-input").value;
+            geoFindLocation(city, street);
+        });

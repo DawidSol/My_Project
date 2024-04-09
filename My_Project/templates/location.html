@@ -1,25 +1,22 @@
 {%  extends 'base.html' %}
+{% load static %}
 {% block title %}Choose Location{% endblock %}
 {% block style %}
-    #map-container {
-            width: 600px;
-            height: 400px;
-            overflow: hidden;
-        }
-        #mapid {
-            width: 100%;
-            height: 100%;
-        }
 {% endblock %}
 {% block list %}<h2>Lokalizacja sklepu</h2>{% endblock %}
 {% block content %}
+    <label for="city-input">Miasto:</label>
+    <input type="text" id="city-input">
+    <label for="street-input">Ulica:</label>
+    <input type="text" id="street-input">
+    <button id="geocode-button">Pobierz współrzędne</button>
     <form method="post">
     {% csrf_token %}
     <label>Nazwa lokalizacji:</label>
     <input type="text" name="name"><br>
     <label>Współrzędne:</label>
-    <input id="latitude" name="latitude">
-    <input id="longitude" name="longitude"><br>
+    <input type="hidden" id="latitude" name="latitude">
+    <input type="hidden" id="longitude" name="longitude"><br>
     <label>Wybierz listę zakupów:</label><br>
     <select name="shopping_list">
         {% for shopping_list in shopping_lists %}
@@ -28,7 +25,40 @@
     </select>
     <button type="submit">Dodaj</button>
 </form>
-<div id="map-container" style="width: 600px; height: 400px; overflow: hidden;">
-        <div id="mapid" style="width: 100%; height: 100%;"></div>
-    </div>
+    <div id="status"></div>
+    <a id="map-link" target="_blank"></a>
+    <script>
+    function geoFindLocation(city, street) {
+            const status = document.querySelector("#status");
+            const mapLink = document.querySelector("#map-link");
+            mapLink.href = "";
+            mapLink.textContent = "";
+            const address = city + ", " + street;
+            const url = `https://nominatim.openstreetmap.org/search?q=${address}&format=json&limit=1`;
+
+            fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                if (data.length > 0) {
+                    const latitude = data[0].lat;
+                    const longitude = data[0].lon;
+                    document.getElementById("latitude").value = latitude;
+                    document.getElementById("longitude").value = longitude;
+                    status.textContent = "";
+                    mapLink.href = `https://www.openstreetmap.org/#map=18/${latitude}/${longitude}`;
+                    mapLink.textContent = `Latitude: ${latitude} °, Longitude: ${longitude} °`;
+                } else {
+                    status.textContent = "Nie znaleziono współrzędnych dla podanego adresu.";
+                }
+            })
+            .catch(error => {
+                status.textContent = "Wystąpił błąd podczas geokodowania adresu.";
+            });
+        }
+        document.querySelector("#geocode-button").addEventListener("click", function() {
+            const city = document.getElementById("city-input").value;
+            const street = document.getElementById("street-input").value;
+            geoFindLocation(city, street);
+        });
+    </script>
 {% endblock %}
