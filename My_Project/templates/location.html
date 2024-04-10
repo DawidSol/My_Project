@@ -6,9 +6,9 @@
 {% block list %}<h2>Lokalizacja sklepu</h2>{% endblock %}
 {% block content %}
     <label for="city-input">Miasto:</label>
-    <input type="text" id="city-input">
+    <input type="text" id="city-input" name="city">
     <label for="street-input">Ulica:</label>
-    <input type="text" id="street-input">
+    <input type="text" id="street-input" name="street">
     <button id="geocode-button">Pobierz współrzędne</button>
     <form method="post">
     {% csrf_token %}
@@ -16,7 +16,7 @@
     <input type="text" name="name"><br>
     <label>Współrzędne:</label>
     <input type="hidden" id="latitude" name="latitude">
-    <input type="hidden" id="longitude" name="longitude"><br>
+    <input type="hidden" id="longitude" name="longitude">
     <label>Wybierz listę zakupów:</label><br>
     <select name="shopping_list">
         {% for shopping_list in shopping_lists %}

@@ -35,7 +35,7 @@
       <a class="nav-item nav-link active" href="/create_list/">Nowa lista zakupów<span class="sr-only">(current)</span></a>
       <a class="nav-item nav-link active" href="/lists/">Wszystkie listy</a>
         <a class="nav-item nav-link active" href="/add_product/">Dodaj Produkt</a>
-        <a class="nav-item nav-link active" href="/add_location/">Dodaj Lokalizację</a>
+        <a class="nav-item nav-link active" href="/add_location/">Dodaj Sklep</a>
     </div>
   </div>
     {% if user.is_authenticated %}
@@ -49,6 +49,7 @@
     <h2>{{ info }}</h2>
 {% endblock %}
 {% block content %}
+    {% if shopping_list.list_checked is False %}
     <form method="post" action="{% url 'delete_product' %}">
     {% csrf_token %}
     <ul>
@@ -60,6 +61,13 @@
     <input type="hidden" name="next" value="{{ request.path }}">
     <button type="submit">Usuń zaznaczone</button>
     </form>
+    {% else %}
+        <ul>
+        {% for product in products %}
+            <li><strong>{{ product }}</strong> {{ product.quantity }}x</li>
+        {% endfor %}
+        </ul>
+    {% endif %}
     {% if user.is_authenticated and shopping_list.list_checked is False %}
         <button id="find-me">Aktualna lokalizacja</button>
         <p id="status"></p>
