@@ -6,7 +6,7 @@ from django.urls import reverse_lazy
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import FormView, ListView, RedirectView
-from .forms import ProductForm, MyCreationForm, LoginForm
+from .forms import ProductForm, MyCreationForm, LoginForm, AddLocationForm, ShoppingListLocationForm
 from .models import ShoppingList, Product, Location
 
 
@@ -152,21 +152,14 @@ class LogoutView(RedirectView):
         return super().get(request, *args, **kwargs)
 
 
-class AddLocationView(LoginRequiredMixin, View):
-    def get(self, request):
-        shopping_lists = ShoppingList.objects.filter(list_checked=False, user=request.user)
-        return render(request, 'location.html', {'shopping_lists': shopping_lists})
+class AddLocationView(LoginRequiredMixin, FormView):
+    template_name = 'location.html'
+    form_class = AddLocationForm
+    success_url = reverse_lazy('index')
 
-    def post(self, request):
-        name = request.POST.get('name')
-        latitude = request.POST.get('latitude')
-        longitude = request.POST.get('longitude')
-        shopping_list_id = request.POST.get('shopping_list')
-        shopping_list = ShoppingList.objects.get(id=shopping_list_id)
-        Location.objects.create(name=name,
-                                point='POINT({} {})'.format(latitude, longitude),
-                                shopping_list=shopping_list)
-        return redirect('index')
+    def form_valid(self, form):
+        form.save()
+        return super().form_valid(form)
 
 
 class LeaveLocationView(LoginRequiredMixin, View):
@@ -182,7 +175,7 @@ class LeaveLocationView(LoginRequiredMixin, View):
             shopping_list_id = request.POST.get('shopping_list_id')
             shopping_list = ShoppingList.objects.get(id=shopping_list_id)
             try:
-                shop_location = Location.objects.get(shopping_list=shopping_list.id)
+                shop_location = shopping_list.shop
                 if shop_location.point.distance(my_current_location.point) > 0.05:
                     return redirect('close_list', shopping_list_id=shopping_list_id)
                 else:
@@ -240,3 +233,27 @@ class ChangeListView(LoginRequiredMixin, View):
         shopping_list.save()
         return render(request, 'base.html', {'info': info})
 
+
+class AddLocationToListView(LoginRequiredMixin, FormView):
+
+    template_name = 'form.html'
+    form_class = ShoppingListLocationForm
+    success_url = reverse_lazy('index')
+
+    def form_valid(self, form):
+        shop = form.cleaned_data['shop']
+        shopping_list = form.instance
+        shopping_list.shop = shop
+        shopping_list.save()
+        return super().form_valid(form)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['instance'] = ShoppingList.objects.get(id=self.kwargs['shopping_list_id'])
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Choose Shop'
+        context['button'] = 'Wybierz'
+        return context

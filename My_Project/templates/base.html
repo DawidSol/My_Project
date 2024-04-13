@@ -46,6 +46,9 @@
         {% endif %}
 </nav>
 {% block list %}
+    {% if shopping_list.shop is not None %}
+        <h3>Zakupy do zrobienia: {{ shopping_list.shop }}</h3>
+    {% endif %}
     <h2>{{ info }}</h2>
 {% endblock %}
 {% block content %}
@@ -71,7 +74,7 @@
     {% if user.is_authenticated and shopping_list.list_checked is False %}
         <button id="find-me">Aktualna lokalizacja</button>
         <p id="status"></p>
-        <a id="map-link" target="_blank"></a>
+        <a id="map-link" target="_blank"></a><br>
         <script>
             function geoFindMe() {
     const status = document.querySelector("#status");
@@ -99,6 +102,9 @@
 }
     document.querySelector("#find-me").addEventListener("click", geoFindMe);
         </script>
+        {% if shopping_list.shop is None %}
+            <button onclick="window.location.href='{% url 'add_location_to_list' shopping_list.id %}'">Wybierz sklep</button>
+        {% endif %}
     <form method="post" action="{% url 'leave_location' %}">
         {% csrf_token %}
         <input type="hidden" name="shopping_list_id" value="{{ shopping_list.id }}">

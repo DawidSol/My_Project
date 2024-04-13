@@ -28,7 +28,8 @@ from shopping_list_app.views import (index,
                                      AddLocationView,
                                      LeaveLocationView,
                                      CloseListView,
-                                     ChangeListView)
+                                     ChangeListView,
+                                     AddLocationToListView)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -45,4 +46,5 @@ urlpatterns = [
     path('leave_location/', LeaveLocationView.as_view(), name='leave_location'),
     path('close_list/<int:shopping_list_id>', CloseListView.as_view(), name='close_list'),
     path('change_list/<int:shopping_list_id>', ChangeListView.as_view(), name='change_list'),
+    path('add_location_to_list/<int:shopping_list_id>', AddLocationToListView.as_view(), name='add_location_to_list'),
 ]
