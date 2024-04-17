@@ -46,6 +46,11 @@
         {% endif %}
 </nav>
 {% block list %}
+    {% if messages %}
+            {% for message in messages %}
+                <h1>{{ message }}</h1>
+            {% endfor %}
+        {% endif %}
     {% if shopping_list.shop is not None %}
         <h3>Zakupy do zrobienia: {{ shopping_list.shop }}</h3>
     {% endif %}
@@ -75,35 +80,10 @@
         <button id="find-me">Aktualna lokalizacja</button>
         <p id="status"></p>
         <a id="map-link" target="_blank"></a><br>
-        <script>
-            function geoFindMe() {
-    const status = document.querySelector("#status");
-    const mapLink = document.querySelector("#map-link");
-    mapLink.href = "";
-    mapLink.textContent = "";
-    function success(position) {
-    const latitude = position.coords.latitude;
-    const longitude = position.coords.longitude;
-    document.getElementById("latitude").value = latitude;
-    document.getElementById("longitude").value = longitude;
-    status.textContent = "";
-    mapLink.href = `https://www.openstreetmap.org/#map=18/${latitude}/${longitude}`;
-    mapLink.textContent = `Latitude: ${latitude} °, Longitude: ${longitude} °`;
-}
-    function error() {
-    status.textContent = "Unable to retrieve your location";
-}
-    if (!navigator.geolocation) {
-    status.textContent = "Geolocation is not supported by your browser";
-} else {
-    status.textContent = "Locating…";
-    navigator.geolocation.getCurrentPosition(success, error);
-}
-}
-    document.querySelector("#find-me").addEventListener("click", geoFindMe);
-        </script>
         {% if shopping_list.shop is None %}
             <button onclick="window.location.href='{% url 'add_location_to_list' shopping_list.id %}'">Wybierz sklep</button>
+        {% else %}
+            <button id="my-location" data-shopping-list-id="{{ shopping_list.id }}">Przypomnienie</button>
         {% endif %}
     <form method="post" action="{% url 'leave_location' %}">
         {% csrf_token %}
@@ -119,5 +99,48 @@
         <span class="text-muted">Created by Dawid Sołek</span>
       </div>
     </footer>
+<script>
+    function geoFindMe(callback) {
+    const status = document.querySelector("#status");
+    const mapLink = document.querySelector("#map-link");
+    mapLink.href = "";
+    mapLink.textContent = "";
+    function success(position) {
+    const latitude = position.coords.latitude;
+    const longitude = position.coords.longitude;
+    document.getElementById("latitude").value = latitude;
+    document.getElementById("longitude").value = longitude;
+        status.textContent = "";
+        mapLink.href = `https://www.openstreetmap.org/#map=18/${latitude}/${longitude}`;
+        mapLink.textContent = `Latitude: ${latitude} °, Longitude: ${longitude} °`;
+        if (callback) {
+                callback(latitude, longitude);
+            }
+}
+    function error() {
+    status.textContent = "Unable to retrieve your location";
+}
+    if (!navigator.geolocation) {
+    status.textContent = "Geolocation is not supported by your browser";
+} else {
+    status.textContent = "Locating…";
+    navigator.geolocation.getCurrentPosition(success, error);
+}
+}
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelector("#find-me").addEventListener("click", function () {
+            geoFindMe();
+        });
+    });
+    document.querySelector("#my-location").addEventListener("click", function() {
+            const myLocationButton = document.getElementById('my-location');
+    myLocationButton.addEventListener('click', function() {
+        const shoppingListId = myLocationButton.getAttribute('data-shopping-list-id');
+            geoFindMe(function(latitude, longitude) {
+                window.location.href = `/send_reminder/${shoppingListId}/?latitude=${latitude}&longitude=${longitude}`;
+            });
+        });
+});
+</script>
 </body>
 </html>

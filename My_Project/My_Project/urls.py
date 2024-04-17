@@ -29,7 +29,8 @@ from shopping_list_app.views import (index,
                                      LeaveLocationView,
                                      CloseListView,
                                      ChangeListView,
-                                     AddLocationToListView)
+                                     AddLocationToListView,
+                                     SendReminderView)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -44,7 +45,8 @@ urlpatterns = [
     path('logout/', LogoutView.as_view(), name='logout'),
     path('add_location/', AddLocationView.as_view(), name='add_location'),
     path('leave_location/', LeaveLocationView.as_view(), name='leave_location'),
-    path('close_list/<int:shopping_list_id>', CloseListView.as_view(), name='close_list'),
-    path('change_list/<int:shopping_list_id>', ChangeListView.as_view(), name='change_list'),
-    path('add_location_to_list/<int:shopping_list_id>', AddLocationToListView.as_view(), name='add_location_to_list'),
+    path('close_list/<int:shopping_list_id>/', CloseListView.as_view(), name='close_list'),
+    path('change_list/<int:shopping_list_id>/', ChangeListView.as_view(), name='change_list'),
+    path('add_location_to_list/<int:shopping_list_id>/', AddLocationToListView.as_view(), name='add_location_to_list'),
+    path('send_reminder/<int:shopping_list_id>/', SendReminderView.as_view(), name='send_reminder'),
 ]

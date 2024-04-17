@@ -1,11 +1,19 @@
+import os
 from django.contrib.auth import authenticate, login, logout
+from django.http import HttpResponseRedirect
+from django.conf import settings
 from django.views import View
 from datetime import datetime
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.contrib import messages
+from django.db.models import Count
+from django.db.models.functions import Lower
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import FormView, ListView, RedirectView
+from dotenv import load_dotenv
+from mailersend import emails
+
 from .forms import ProductForm, MyCreationForm, LoginForm, AddLocationForm, ShoppingListLocationForm
 from .models import ShoppingList, Product, Location
 
@@ -235,7 +243,6 @@ class ChangeListView(LoginRequiredMixin, View):
 
 
 class AddLocationToListView(LoginRequiredMixin, FormView):
-
     template_name = 'form.html'
     form_class = ShoppingListLocationForm
     success_url = reverse_lazy('index')
@@ -257,3 +264,61 @@ class AddLocationToListView(LoginRequiredMixin, FormView):
         context['title'] = 'Choose Shop'
         context['button'] = 'Wybierz'
         return context
+
+
+class SendReminderView(LoginRequiredMixin, View):
+    def get(self, request, shopping_list_id):
+        user = request.user
+        shopping_list = ShoppingList.objects.get(id=shopping_list_id)
+        products = Product.objects.filter(shopping_list=shopping_list)
+        shop_location = shopping_list.shop
+        latitude = request.GET.get('latitude')
+        longitude = request.GET.get('longitude')
+        if latitude and longitude:
+            latitude = float(latitude)
+            longitude = float(longitude)
+            my_current_location = Location.objects.create(name='current_location',
+                                                          point='POINT({} {})'.format(latitude, longitude))
+            if shop_location.point.distance(my_current_location.point) < 50:
+                done_lists = ShoppingList.objects.filter(list_checked=True, user=request.user, shop=shop_location)
+                if len(done_lists) > 1:
+                    product_count = (Product.objects.annotate(lower_name=Lower('name')).values('lower_name')
+                                     .annotate(count=Count('shopping_list')).order_by('-count')[:5])
+                    filtered_product_count = [item for item in product_count if item['lower_name']
+                                              not in [product.name.lower() for product in products]]
+                    if len(filtered_product_count) > 0:
+                        message = f'Witaj {user.username}!\n\n'
+                        message += f'Znajdujesz się w pobliżu {shop_location}!\n'
+                        message += 'Oto kilka najczęściej kupowanych przez Ciebie produktów w tym sklepie, '
+                        message += 'których obecnie nie ma na Twojej liście:\n'
+                        for product in filtered_product_count:
+                            message += f'\t{product["lower_name"]}\n'
+                        try:
+                            load_dotenv()
+                            api_key = os.getenv('MAILERSEND_API_KEY')
+                            mailer = emails.NewEmail(api_key)
+                            mail_body = {}
+                            mail_from = {"name": "noreply", "email": settings.DEFAULT_FROM_EMAIL}
+                            recipient = [{"name": user.username, "email": user.email}]
+                            mailer.set_mail_from(mail_from, mail_body)
+                            mailer.set_mail_to(recipient, mail_body)
+                            mailer.set_subject("Przypomnienie", mail_body)
+                            mailer.set_plaintext_content(message, mail_body)
+                            response = mailer.send(mail_body)
+                            if int(response) == 202:
+                                messages.success(request, 'Wiadomość e-mail została wysłana pomyślnie!')
+                                return HttpResponseRedirect(reverse_lazy('index'))
+                            else:
+                                messages.error(request, 'Wystąpił problem podczas wysyłania wiadomości e-mail.')
+                                return HttpResponseRedirect(reverse_lazy('index'))
+                        except Exception as e:
+                            messages.error(request, f'An error occurred: {e}')
+                            return HttpResponseRedirect(reverse_lazy('index'))
+                messages.info(request, 'Nie ma żadnych przypomnień!')
+                return HttpResponseRedirect(reverse_lazy('index'))
+            messages.info(request, 'W pobliżu nie ma żadnego z Twoich sklepów!')
+            my_current_location.delete()
+            return HttpResponseRedirect(reverse_lazy('index'))
+        else:
+            messages.info(request, 'Brak danych lokalizacyjnych')
+            return HttpResponseRedirect(reverse_lazy('index'))
