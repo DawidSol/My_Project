@@ -1,9 +1,15 @@
 {%  extends 'base.html' %}
 {% block title %}List details{% endblock %}
 {% block list %}
+    <h2>{{ info }}</h2>
     <h1>Lista z dnia {{ shopping_list }}:</h1>
+    {% if shopping_list.shop is not None %}
+        <h3>Zakupy do zrobienia: <strong>{{ shopping_list.shop }}</strong></h3>
+        {% else %}
+        <h3>Zakupy do zrobienia: <strong>Nie podano żadnego konkretnego sklepu</strong></h3>
+        {% endif %}
     {% if shopping_list.list_checked is True %}
-        <h2>Zrealizowana</h2>
+        <h2>Zrealizowana w sklepie: {{ shopping_list.shop }}</h2>
     {% else %}
         <h2>W trakcie realizacji</h2>
     {% endif %}

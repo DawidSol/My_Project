@@ -1,7 +1,7 @@
 import os
 from django.contrib.auth import authenticate, login, logout
-from django.http import HttpResponseRedirect
 from django.conf import settings
+from django.core.paginator import Paginator
 from django.views import View
 from datetime import datetime
 from django.shortcuts import render, redirect
@@ -13,7 +13,6 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import FormView, ListView, RedirectView
 from dotenv import load_dotenv
 from mailersend import emails
-
 from .forms import ProductForm, MyCreationForm, LoginForm, AddLocationForm, ShoppingListLocationForm
 from .models import ShoppingList, Product, Location
 
@@ -32,10 +31,8 @@ def index(request):
             shopping_list_id = request.session.get('shopping_list_id')
             shopping_list = ShoppingList.objects.get(id=shopping_list_id)
             products = Product.objects.filter(shopping_list=shopping_list)
-    info = 'Lista zakupów:'
     return render(request, 'base.html', {'products': products,
-                                         'shopping_list': shopping_list,
-                                         'info': info})
+                                         'shopping_list': shopping_list})
 
 
 class CreateListView(LoginRequiredMixin, View):
@@ -54,13 +51,13 @@ class CreateListView(LoginRequiredMixin, View):
 class AddProductView(FormView):
     template_name = 'form.html'
     form_class = ProductForm
-    success_url = reverse_lazy('index')
 
     def form_valid(self, form):
         shopping_list = form.cleaned_data['shopping_list']
         product = form.save(commit=False)
         product.shopping_list = shopping_list
         product.save()
+        self.request.session['shopping_list_id'] = shopping_list.id
         return super().form_valid(form)
 
     def get_form_kwargs(self):
@@ -78,15 +75,31 @@ class AddProductView(FormView):
         context['button'] = 'Dodaj'
         return context
 
+    def get_success_url(self):
+        if self.request.user.is_authenticated:
+            shopping_list_id = self.request.session.get('shopping_list_id')
+            return reverse_lazy('list_details', kwargs={'shopping_list_id': shopping_list_id})
+        else:
+            return reverse_lazy('index')
+
 
 class ListsView(LoginRequiredMixin, ListView):
     model = ShoppingList
     template_name = 'lists.html'
-    context_object_name = 'lists'
+    paginate_by = 10
 
     def get_queryset(self):
         queryset = super().get_queryset()
         return queryset.filter(user=self.request.user)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        lists = ShoppingList.objects.filter(user=self.request.user).order_by('-add_date')
+        paginator = Paginator(lists, self.paginate_by)
+        page_number = self.request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+        context['page_obj'] = page_obj
+        return context
 
 
 class ListDetailView(LoginRequiredMixin, View):
@@ -102,8 +115,7 @@ class DeleteProductView(View):
         selected_products = request.POST.getlist('selected_products')
         if selected_products:
             Product.objects.filter(id__in=selected_products).delete()
-        next_url = request.POST.get('next', '/')
-        return redirect(next_url)
+        return redirect('index')
 
 
 class CreateUserView(FormView):
@@ -169,31 +181,37 @@ class AddLocationView(LoginRequiredMixin, FormView):
         form.save()
         return super().form_valid(form)
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
 
 class LeaveLocationView(LoginRequiredMixin, View):
 
     def post(self, request):
         latitude = request.POST.get('latitude')
         longitude = request.POST.get('longitude')
+        shopping_list_id = request.POST.get('shopping_list_id')
+        shopping_list = ShoppingList.objects.get(id=shopping_list_id)
+        products = Product.objects.filter(shopping_list=shopping_list)
         if latitude and longitude:
             latitude = float(latitude)
             longitude = float(longitude)
             my_current_location = Location.objects.create(name='current_location',
                                                           point='POINT({} {})'.format(latitude, longitude))
-            shopping_list_id = request.POST.get('shopping_list_id')
-            shopping_list = ShoppingList.objects.get(id=shopping_list_id)
-            try:
-                shop_location = shopping_list.shop
+            shop_location = shopping_list.shop
+            if shop_location:
                 if shop_location.point.distance(my_current_location.point) > 0.05:
                     return redirect('close_list', shopping_list_id=shopping_list_id)
                 else:
                     info = 'Nie opuszczono okolic sklepu!'
-            except Location.DoesNotExist:
+            else:
                 info = 'Lista nie jest przypisana do żadnego sklepu!'
-                return render(request, 'base.html', {'info': info})
         else:
             info = 'Brak danych lokalizacyjnych'
-        return render(request, 'base.html', {'info': info})
+        return render(request, 'list_details.html', {'info': info,
+                                                     'shopping_list': shopping_list, 'products': products})
 
 
 class CloseListView(LoginRequiredMixin, View):
@@ -228,6 +246,8 @@ class ChangeListView(LoginRequiredMixin, View):
         if option == 'delete':
             Product.objects.filter(id__in=selected_products).delete()
             info = 'Lista pomyślnie zamknięta!'
+        elif len(selected_products) == 0:
+            info = 'Nie wybrano żadnych produktów, lista została zrealizowana w całości'
         else:
             new_shopping_list = ShoppingList.objects.create(add_date=datetime.now(), user=request.user)
             for product in selected_products:
@@ -256,6 +276,7 @@ class AddLocationToListView(LoginRequiredMixin, FormView):
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
         kwargs['instance'] = ShoppingList.objects.get(id=self.kwargs['shopping_list_id'])
         return kwargs
 
@@ -305,20 +326,22 @@ class SendReminderView(LoginRequiredMixin, View):
                             mailer.set_subject("Przypomnienie", mail_body)
                             mailer.set_plaintext_content(message, mail_body)
                             response = mailer.send(mail_body)
-                            if int(response) == 202:
+                            print(response)
+                            print(type(response))
+                            if response == '202\n':
                                 messages.success(request, 'Wiadomość e-mail została wysłana pomyślnie!')
-                                return HttpResponseRedirect(reverse_lazy('index'))
+                                return redirect('list_details', shopping_list_id=shopping_list_id)
                             else:
                                 messages.error(request, 'Wystąpił problem podczas wysyłania wiadomości e-mail.')
-                                return HttpResponseRedirect(reverse_lazy('index'))
+                                return redirect('index')
                         except Exception as e:
                             messages.error(request, f'An error occurred: {e}')
-                            return HttpResponseRedirect(reverse_lazy('index'))
+                            return redirect('index')
                 messages.info(request, 'Nie ma żadnych przypomnień!')
-                return HttpResponseRedirect(reverse_lazy('index'))
+                return redirect('list_details', shopping_list_id=shopping_list_id)
             messages.info(request, 'W pobliżu nie ma żadnego z Twoich sklepów!')
             my_current_location.delete()
-            return HttpResponseRedirect(reverse_lazy('index'))
+            return redirect('list_details', shopping_list_id=shopping_list_id)
         else:
             messages.info(request, 'Brak danych lokalizacyjnych')
-            return HttpResponseRedirect(reverse_lazy('index'))
+            return redirect('list_details', shopping_list_id=shopping_list_id)

@@ -51,10 +51,16 @@ class AddLocationForm(forms.ModelForm):
     city = forms.CharField(widget=forms.HiddenInput())
     street = forms.CharField(widget=forms.HiddenInput())
     point = forms.PointField(widget=forms.HiddenInput(), required=False)
+    added_by = forms.ModelChoiceField(queryset=User.objects.all(), widget=forms.HiddenInput())
 
     class Meta:
         model = Location
-        fields = ['name', 'point', 'city', 'street']
+        fields = ['name', 'point', 'city', 'street', 'added_by']
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        self.fields['added_by'].initial = user
 
     def clean(self):
         cleaned_data = super().clean()
@@ -73,5 +79,6 @@ class ShoppingListLocationForm(forms.ModelForm):
         fields = ['shop']
 
     def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-        self.fields['shop'].queryset = Location.objects.all()
+        self.fields['shop'].queryset = Location.objects.filter(added_by=user)

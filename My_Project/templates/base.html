@@ -15,7 +15,7 @@
         margin-left: 10px;
     }
   .footer {
-    position: absolute;
+    position: sticky;
     bottom: 0;
     width: 100%;
     height: 60px;
@@ -34,7 +34,6 @@
     <div class="navbar-nav">
       <a class="nav-item nav-link active" href="/create_list/">Nowa lista zakupów<span class="sr-only">(current)</span></a>
       <a class="nav-item nav-link active" href="/lists/">Wszystkie listy</a>
-        <a class="nav-item nav-link active" href="/add_product/">Dodaj Produkt</a>
         <a class="nav-item nav-link active" href="/add_location/">Dodaj Sklep</a>
     </div>
   </div>
@@ -45,20 +44,24 @@
             <a class="nav-item nav-link active right-button" href="/create_user/">Rejestracja</a>
         {% endif %}
 </nav>
-{% block list %}
-    {% if messages %}
+{% if messages %}
             {% for message in messages %}
                 <h1>{{ message }}</h1>
             {% endfor %}
         {% endif %}
-    {% if shopping_list.shop is not None %}
-        <h3>Zakupy do zrobienia: {{ shopping_list.shop }}</h3>
+{% block list %}
+    {% if user.is_authenticated %}
+        {% if shopping_list.shop is not None %}
+            <h3><strong>Zakupy do zrobienia:</strong> {{ shopping_list.shop }}</h3>
+        {% else %}
+            <h3><strong>Zakupy do zrobienia:</strong> Nie podano żadnego konkretnego sklepu</h3>
+        {% endif %}
     {% endif %}
-    <h2>{{ info }}</h2>
+    <h2>Lista zakupów:</h2>
 {% endblock %}
 {% block content %}
     {% if shopping_list.list_checked is False %}
-    <form method="post" action="{% url 'delete_product' %}">
+    <form id="delete_product" method="post" action="{% url 'delete_product' %}">
     {% csrf_token %}
     <ul>
     {% for product in products %}
@@ -66,8 +69,6 @@
         <input type="checkbox" name="selected_products" value="{{ product.id }}"></li>
     {% endfor %}
     </ul>
-    <input type="hidden" name="next" value="{{ request.path }}">
-    <button type="submit">Usuń zaznaczone</button>
     </form>
     {% else %}
         <ul>
@@ -76,21 +77,23 @@
         {% endfor %}
         </ul>
     {% endif %}
+    <button onclick="window.location.href='{% url 'add_product' %}'">Dodaj Produkt</button>
+    <button type="submit" form="delete_product">Usuń zaznaczone</button>
     {% if user.is_authenticated and shopping_list.list_checked is False %}
+        <button type="submit" form="leave_location">Zamknij listę</button>
         <button id="find-me">Aktualna lokalizacja</button>
-        <p id="status"></p>
-        <a id="map-link" target="_blank"></a><br>
         {% if shopping_list.shop is None %}
             <button onclick="window.location.href='{% url 'add_location_to_list' shopping_list.id %}'">Wybierz sklep</button>
         {% else %}
             <button id="my-location" data-shopping-list-id="{{ shopping_list.id }}">Przypomnienie</button>
         {% endif %}
-    <form method="post" action="{% url 'leave_location' %}">
+        <p id="status"></p>
+        <a id="map-link" target="_blank"></a><br>
+    <form id="leave_location" method="post" action="{% url 'leave_location' %}">
         {% csrf_token %}
         <input type="hidden" name="shopping_list_id" value="{{ shopping_list.id }}">
         <input type="hidden" id="latitude" name="latitude" value="">
         <input type="hidden" id="longitude" name="longitude" value="">
-        <button type="submit">Zamknij listę</button>
 </form>
     {% endif %}
 {% endblock %}

@@ -5,11 +5,35 @@
 {% endblock %}
 {% block content %}
 <ul>
-    {% for shopping_list in lists %}
-        <li><a href="{% url 'list_details' shopping_list.id %}">{{ shopping_list }}</a></li>
+    {% for shopping_list in page_obj %}
+        <li>
+            <a href="{% url 'list_details' shopping_list.id %}">{{ shopping_list }}</a>
+            {% if shopping_list.list_checked is True %}
+                <p><strong>Zrealizowana:</strong> {{ shopping_list.shop }}</p>
+            {% else %}
+                <p>Niezrealizowana</p>
+            {% endif %}
+        </li>
         <hr>
     {% empty %}
         <p>Nie masz żadnych list</p>
     {% endfor %}
 </ul>
+    <div class="pagination">
+    <span class="step-links">
+        {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}">&lt; Poprzednia</a>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+                <strong><span class="current">{{ num }}</span></strong>
+            {% else %}
+                <a href="?page={{ num }}">{{ num }}</a>
+            {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}">Następna &gt;</a>
+        {% endif %}
+    </span>
+    </div>
 {%  endblock %}
