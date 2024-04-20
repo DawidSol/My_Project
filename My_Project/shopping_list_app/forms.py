@@ -67,7 +67,7 @@ class AddLocationForm(forms.ModelForm):
         latitude = cleaned_data.get('latitude')
         longitude = cleaned_data.get('longitude')
         if latitude and longitude:
-            cleaned_data['point'] = f'POINT({longitude} {latitude})'
+            cleaned_data['point'] = f'POINT({latitude} {longitude})'
         else:
             self.add_error(None, forms.ValidationError("Uzupełnij wszystkie pola."))
         return cleaned_data

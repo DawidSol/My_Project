@@ -1,4 +1,5 @@
 import os
+from geopy.distance import geodesic
 from django.contrib.auth import authenticate, login, logout
 from django.conf import settings
 from django.core.paginator import Paginator
@@ -213,8 +214,7 @@ class LeaveLocationView(LoginRequiredMixin, View):
                                                           point='POINT({} {})'.format(latitude, longitude))
             shop_location = shopping_list.shop
             if shop_location:
-                if shop_location.point.distance(my_current_location.point)*100 > 500:
-                    print(shop_location.point.distance(my_current_location.point)*100)
+                if geodesic(shop_location.point, my_current_location.point) > 0.1:
                     return redirect('close_list', shopping_list_id=shopping_list_id)
                 else:
                     info = 'Nie opuszczono okolic sklepu!'
@@ -322,8 +322,7 @@ class SendReminderView(LoginRequiredMixin, View):
             longitude = float(longitude)
             my_current_location = Location.objects.create(name='current_location',
                                                           point='POINT({} {})'.format(latitude, longitude))
-            if shop_location.point.distance(my_current_location.point)*100 < 500:
-                print(shop_location.point.distance(my_current_location.point))
+            if geodesic(shop_location.point, my_current_location.point) < 0.2:
                 done_lists = ShoppingList.objects.filter(list_checked=True, user=request.user, shop=shop_location)
                 if len(done_lists) > 1:
                     product_count = (Product.objects.annotate(lower_name=Lower('name')).values('lower_name')
