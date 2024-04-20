@@ -11,6 +11,9 @@
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
 </head>
 <style>
+    .user-color{
+        color: aliceblue;
+    }
     .right-button {
         float: right;
         margin-left: 10px;
@@ -39,6 +42,7 @@
     </div>
   </div>
     {% if user.is_authenticated %}
+            <h3 class="user-color">{{ user.username }}</h3>
             <a class="nav-item nav-link active right-button" href="/logout/">Wyloguj</a>
             {% else %}
             <a class="nav-item nav-link active right-button" href="/login/">Zaloguj</a>
