@@ -17,6 +17,7 @@ from .forms import ProductForm, MyCreationForm, LoginForm, AddLocationForm, Shop
 from .models import ShoppingList, Product, Location
 
 
+# Home page view, if user is authenticated show last shopping list, if not generate a new list
 def index(request):
     products = None
     if request.user.is_authenticated:
@@ -35,6 +36,7 @@ def index(request):
                                          'shopping_list': shopping_list})
 
 
+# Create new object ShoppingList
 class CreateListView(LoginRequiredMixin, View):
     def get(self, request):
         title = 'Stwórz listę'
@@ -48,6 +50,7 @@ class CreateListView(LoginRequiredMixin, View):
         return redirect('index')
 
 
+# Add product to shopping list
 class AddProductView(FormView):
     template_name = 'form.html'
     form_class = ProductForm
@@ -83,6 +86,7 @@ class AddProductView(FormView):
             return reverse_lazy('index')
 
 
+# Show all shopping lists of the user
 class ListsView(LoginRequiredMixin, ListView):
     model = ShoppingList
     template_name = 'lists.html'
@@ -102,6 +106,7 @@ class ListsView(LoginRequiredMixin, ListView):
         return context
 
 
+# Show details of specific shopping list
 class ListDetailView(LoginRequiredMixin, View):
     def get(self, request, shopping_list_id):
         shopping_list = ShoppingList.objects.get(pk=shopping_list_id)
@@ -110,6 +115,7 @@ class ListDetailView(LoginRequiredMixin, View):
                       {'shopping_list': shopping_list, 'products': products})
 
 
+# Remove products from shopping list
 class DeleteProductView(View):
     def post(self, request):
         selected_products = request.POST.getlist('selected_products')
@@ -118,6 +124,7 @@ class DeleteProductView(View):
         return redirect('index')
 
 
+# Create new user
 class CreateUserView(FormView):
     template_name = 'form.html'
     form_class = MyCreationForm
@@ -134,6 +141,7 @@ class CreateUserView(FormView):
         return context
 
 
+# Log in
 class LoginView(FormView):
     template_name = 'form.html'
     form_class = LoginForm
@@ -164,6 +172,7 @@ class LoginView(FormView):
         return context
 
 
+# Log out
 class LogoutView(RedirectView):
     url = reverse_lazy('index')
 
@@ -172,6 +181,7 @@ class LogoutView(RedirectView):
         return super().get(request, *args, **kwargs)
 
 
+# Create new shop location
 class AddLocationView(LoginRequiredMixin, FormView):
     template_name = 'location.html'
     form_class = AddLocationForm
@@ -187,6 +197,7 @@ class AddLocationView(LoginRequiredMixin, FormView):
         return kwargs
 
 
+# Get current location and close the shopping list
 class LeaveLocationView(LoginRequiredMixin, View):
 
     def post(self, request):
@@ -215,6 +226,7 @@ class LeaveLocationView(LoginRequiredMixin, View):
                                                      'shopping_list': shopping_list, 'products': products})
 
 
+# Check if all products from list were bought if so close list, if not go to more options
 class CloseListView(LoginRequiredMixin, View):
     def get(self, request, shopping_list_id):
         title = 'Zamknij listę'
@@ -236,6 +248,7 @@ class CloseListView(LoginRequiredMixin, View):
             return redirect('change_list', shopping_list_id=shopping_list_id)
 
 
+# Delete products that were not bought or add them to a new list
 class ChangeListView(LoginRequiredMixin, View):
     def get(self, request, shopping_list_id):
         shopping_list = ShoppingList.objects.get(id=shopping_list_id)
@@ -265,6 +278,7 @@ class ChangeListView(LoginRequiredMixin, View):
         return render(request, 'base.html', {'info': info})
 
 
+# Add shop location to a shopping list
 class AddLocationToListView(LoginRequiredMixin, FormView):
     template_name = 'form.html'
     form_class = ShoppingListLocationForm
@@ -294,6 +308,7 @@ class AddLocationToListView(LoginRequiredMixin, FormView):
         return reverse_lazy('list_details', kwargs={'shopping_list_id': shopping_list_id})
 
 
+# Send an e-mail with most popular products for the shop location
 class SendReminderView(LoginRequiredMixin, View):
     def get(self, request, shopping_list_id):
         user = request.user
