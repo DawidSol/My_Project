@@ -282,7 +282,6 @@ class ChangeListView(LoginRequiredMixin, View):
 class AddLocationToListView(LoginRequiredMixin, FormView):
     template_name = 'form.html'
     form_class = ShoppingListLocationForm
-    success_url = reverse_lazy('index')
 
     def form_valid(self, form):
         shop = form.cleaned_data['shop']
