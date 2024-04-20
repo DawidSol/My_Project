@@ -26,7 +26,7 @@ class ProductForm(forms.ModelForm):
             self.fields['shopping_list'].queryset = ShoppingList.objects.filter(list_checked=False, user=None)
         else:
             self.fields['shopping_list'].queryset = ShoppingList.objects.filter(list_checked=False, user=user)
-        if 'instance' not in kwargs:
+        if not kwargs.get('instance'):
             last_shopping_list = ShoppingList.objects.filter(list_checked=False, user=user).last()
             if last_shopping_list:
                 self.initial['shopping_list'] = last_shopping_list.pk
@@ -46,10 +46,10 @@ class LoginForm(forms.Form):
 
 
 class AddLocationForm(forms.ModelForm):
-    latitude = forms.CharField(widget=forms.HiddenInput())
-    longitude = forms.CharField(widget=forms.HiddenInput())
-    city = forms.CharField(widget=forms.HiddenInput())
-    street = forms.CharField(widget=forms.HiddenInput())
+    latitude = forms.CharField(widget=forms.HiddenInput(), required=False)
+    longitude = forms.CharField(widget=forms.HiddenInput(), required=False)
+    city = forms.CharField(widget=forms.HiddenInput(), required=False)
+    street = forms.CharField(widget=forms.HiddenInput(), required=False)
     point = forms.PointField(widget=forms.HiddenInput(), required=False)
     added_by = forms.ModelChoiceField(queryset=User.objects.all(), widget=forms.HiddenInput())
 
@@ -69,7 +69,7 @@ class AddLocationForm(forms.ModelForm):
         if latitude and longitude:
             cleaned_data['point'] = f'POINT({longitude} {latitude})'
         else:
-            raise forms.ValidationError("Wszystkie wymagane pola muszą być wypełnione.")
+            self.add_error(None, forms.ValidationError("Uzupełnij wszystkie pola."))
         return cleaned_data
 
 

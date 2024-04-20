@@ -202,7 +202,8 @@ class LeaveLocationView(LoginRequiredMixin, View):
                                                           point='POINT({} {})'.format(latitude, longitude))
             shop_location = shopping_list.shop
             if shop_location:
-                if shop_location.point.distance(my_current_location.point) > 0.05:
+                if shop_location.point.distance(my_current_location.point)*100 > 500:
+                    print(shop_location.point.distance(my_current_location.point)*100)
                     return redirect('close_list', shopping_list_id=shopping_list_id)
                 else:
                     info = 'Nie opuszczono okolic sklepu!'
@@ -228,7 +229,9 @@ class CloseListView(LoginRequiredMixin, View):
             shopping_list.checked_date = datetime.now()
             shopping_list.save()
             info = 'Lista pomyślnie zamknięta!'
-            return render(request, 'base.html', {'info': info})
+            products = Product.objects.filter(shopping_list=shopping_list)
+            return render(request, 'list_details.html', {'shopping_list': shopping_list,
+                                                         'products': products, 'info': info})
         else:
             return redirect('change_list', shopping_list_id=shopping_list_id)
 
@@ -286,6 +289,10 @@ class AddLocationToListView(LoginRequiredMixin, FormView):
         context['button'] = 'Wybierz'
         return context
 
+    def get_success_url(self):
+        shopping_list_id = self.kwargs.get('shopping_list_id')
+        return reverse_lazy('list_details', kwargs={'shopping_list_id': shopping_list_id})
+
 
 class SendReminderView(LoginRequiredMixin, View):
     def get(self, request, shopping_list_id):
@@ -300,7 +307,8 @@ class SendReminderView(LoginRequiredMixin, View):
             longitude = float(longitude)
             my_current_location = Location.objects.create(name='current_location',
                                                           point='POINT({} {})'.format(latitude, longitude))
-            if shop_location.point.distance(my_current_location.point) < 50:
+            if shop_location.point.distance(my_current_location.point)*100 < 500:
+                print(shop_location.point.distance(my_current_location.point))
                 done_lists = ShoppingList.objects.filter(list_checked=True, user=request.user, shop=shop_location)
                 if len(done_lists) > 1:
                     product_count = (Product.objects.annotate(lower_name=Lower('name')).values('lower_name')
@@ -326,8 +334,6 @@ class SendReminderView(LoginRequiredMixin, View):
                             mailer.set_subject("Przypomnienie", mail_body)
                             mailer.set_plaintext_content(message, mail_body)
                             response = mailer.send(mail_body)
-                            print(response)
-                            print(type(response))
                             if response == '202\n':
                                 messages.success(request, 'Wiadomość e-mail została wysłana pomyślnie!')
                                 return redirect('list_details', shopping_list_id=shopping_list_id)

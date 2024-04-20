@@ -14,8 +14,8 @@
         <input type="text" id="city" name="city">
         <label for="street">Ulica:</label>
         <input type="text" id="street" name="street">
-        <button id="geocode-button" type="button">Pobierz współrzędne</button>
-    <div id="status"></div>
+        <button id="geocode-button" type="button">Pobierz współrzędne</button><br>
+        <div id="status"></div>
     <a id="map-link" target="_blank"></a><br>
     <button type="submit">Dodaj</button>
 </form>
@@ -25,6 +25,7 @@
             const mapLink = document.querySelector("#map-link");
             mapLink.href = "";
             mapLink.textContent = "";
+            if (city && street) {
             const address = city + "," + street;
             const url = `https://nominatim.openstreetmap.org/search?q=${address}&format=json&limit=1`;
             fetch(url)
@@ -46,7 +47,11 @@
             .catch(error => {
                 status.textContent = "Wystąpił błąd podczas geokodowania adresu.";
             });
-        }
+        } 
+            else {
+                status.textContent = "Wpisz miasto i ulicę, aby znaleźć lokalizację.";
+            }
+    }
         document.querySelector("#geocode-button").addEventListener("click", function() {
             const city = document.getElementById("city").value;
             const street = document.getElementById("street").value;

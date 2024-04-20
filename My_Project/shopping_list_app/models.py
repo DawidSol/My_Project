@@ -7,7 +7,7 @@ class Location(models.Model):
     point = models.PointField()
     city = models.CharField(max_length=64)
     street = models.CharField(max_length=64)
-    added_by = models.ForeignKey(User, on_delete=models.CASCADE,blank=True, null=True)
+    added_by = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
 
     def __str__(self):
         return f'{self.name}({self.street})'
